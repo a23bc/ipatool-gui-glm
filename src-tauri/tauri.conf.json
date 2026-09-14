@@ -24,8 +24,7 @@
         "shadow": true,
         "center": true,
         "alwaysOnTop": false,
-        "skipTaskbar": false,
-        "theme": "dark"
+        "skipTaskbar": false
       }
     ],
     "security": {
@@ -54,20 +53,6 @@
     "resources": [],
     "externalBin": ["binaries/ipatool"],
     "copyright": "© 2026 ipatool-gui contributors",
-    "macOS": {
-      "frameworks": [],
-      "signingIdentity": null,
-      "entitlements": null
-    },
-    "windows": {
-      "wix": {
-        "skipWebviewInstall": false
-      },
-      "nsis": {
-        "installMode": "perUser"
-      },
-      "certificate": null
-    },
     "linux": {
       "deb": {
         "depends": []

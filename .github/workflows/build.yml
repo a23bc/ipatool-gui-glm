@@ -91,9 +91,13 @@ jobs:
       fail-fast: false
       matrix:
         settings:
-          - { host: macos-14,  target: aarch64-apple-darwin,    args: "--target aarch64-apple-darwin"          }
-          - { host: macos-13,  target: x86_64-apple-darwin,      args: "--target x86_64-apple-darwin"          }
-          - { host: windows-2022, target: x86_64-pc-windows-msvc, args: "--target x86_64-pc-windows-msvc"     }
+          # GitHub deprecated macos-13 (Intel) — use macos-14 (Apple Silicon)
+          # for both Apple targets and cross-compile to x86_64-apple-darwin.
+          # The host arm64 chip can produce x86_64 binaries without issue
+          # since both are Mach-O macOS native.
+          - { host: macos-14,    target: aarch64-apple-darwin,    args: "--target aarch64-apple-darwin" }
+          - { host: macos-14,    target: x86_64-apple-darwin,     args: "--target x86_64-apple-darwin" }
+          - { host: windows-2022, target: x86_64-pc-windows-msvc, args: "--target x86_64-pc-windows-msvc" }
           - { host: ubuntu-22.04, target: x86_64-unknown-linux-gnu, args: "--target x86_64-unknown-linux-gnu" }
 
     steps:

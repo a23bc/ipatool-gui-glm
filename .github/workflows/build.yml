@@ -109,17 +109,23 @@ jobs:
         with:
           workspaces: "src-tauri -> target"
 
+      # Install pnpm BEFORE setup-node — `cache: pnpm` in setup-node needs
+      # the pnpm executable to already be on PATH, otherwise it errors out
+      # with "Unable to locate executable file: pnpm".
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
-      - name: Install pnpm
-        run: npm install -g pnpm@9
-
       - name: Install JS deps
-        run: pnpm install --frozen-lockfile || pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Download all sidecar artifacts
         uses: actions/download-artifact@v4

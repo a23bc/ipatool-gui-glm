@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Dark theme (default) */
+    --background: 220 13% 8%;
+    --foreground: 220 14% 93%;
+    --card: 222 14% 11%;
+    --card-foreground: 220 14% 93%;
+    --popover: 222 14% 10%;
+    --popover-foreground: 220 14% 93%;
+    --primary: 213 100% 65%;
+    --primary-foreground: 220 14% 98%;
+    --secondary: 220 13% 16%;
+    --secondary-foreground: 220 14% 93%;
+    --muted: 220 13% 16%;
+    --muted-foreground: 220 9% 60%;
+    --accent: 213 100% 65%;
+    --accent-foreground: 220 14% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 220 14% 98%;
+    --border: 220 13% 18%;
+    --input: 220 13% 16%;
+    --ring: 213 100% 65%;
+    --radius: 0.65rem;
+  }
+
+  html, body, #root {
+    @apply h-full;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    overflow: hidden;
+  }
+
+  /* Custom scrollbars — slim, theme-aware, only show on hover */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(220 13% 22%);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(220 13% 30%); background-clip: content-box; }
+
+  /* Selection */
+  ::selection { background: hsl(213 100% 65% / 0.3); }
+
+  /* Tab focus ring */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  /* Hide default file input button styling */
+  input[type="file"] { font-size: 0; }
+}
+
+@layer components {
+  /* A glass card used on the dashboard */
+  .glass-card {
+    @apply rounded-xl border border-border bg-card/60 backdrop-blur-md;
+    background-image: linear-gradient(180deg, hsl(220 14% 13% / 0.4) 0%, hsl(220 14% 9% / 0.2) 100%);
+  }
+
+  .btn-press {
+    @apply transition-all active:scale-[0.97];
+  }
+
+  /* Skeleton shimmer */
+  .skeleton {
+    @apply relative overflow-hidden rounded-md bg-muted;
+  }
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, hsl(220 14% 18% / 0.6), transparent);
+    animation: skeleton-shimmer 1.4s infinite;
+  }
+  @keyframes skeleton-shimmer {
+    100% { transform: translateX(100%); }
+  }
+}
+
+/* Tauri drag region (for custom title bars in the future) */
+[data-tauri-drag-region] { -webkit-app-region: drag; pointer-events: none; }
+[data-tauri-drag-region] button,
+[data-tauri-drag-region] a,
+[data-tauri-drag-region] input { -webkit-app-region: no-drag; pointer-events: auto; }

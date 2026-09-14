@@ -1,0 +1,49 @@
+[package]
+name = "ipatool-gui"
+version = "0.1.0"
+description = "A cross-platform GUI for ipatool"
+authors = ["ipatool-gui contributors"]
+license = "MIT"
+repository = ""
+default-run = "ipatool-gui"
+edition = "2021"
+rust-version = "1.77"
+
+[lib]
+name = "ipatool_gui_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+# Build the sidecar binary inside the workspace so GitHub Actions can compile
+# ipatool as a sidecar (resources) without polluting the repo.
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["protocol-asset"] }
+tauri-plugin-shell = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-process = "2"
+tauri-plugin-os = "2"
+tauri-plugin-clipboard-manager = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-log = "2"
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+log = "0.4"
+dirs = "5"
+which = "6"
+zip = "2"
+reqwest = { version = "0.12", features = ["blocking", "json", "stream"] }
+futures-util = "0.3"
+tar = "0.4"
+flate2 = "1"
+semver = "1"
+open = "5"
+
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]

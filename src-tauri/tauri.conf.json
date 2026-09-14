@@ -1,0 +1,89 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "ipatool-gui",
+  "version": "0.1.0",
+  "identifier": "io.github.ipatool.gui",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "beforeBuildCommand": "pnpm build",
+    "devUrl": "http://localhost:1420",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "ipatool-gui",
+        "width": 1100,
+        "height": 720,
+        "minWidth": 880,
+        "minHeight": 560,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true,
+        "transparent": false,
+        "shadow": true,
+        "center": true,
+        "alwaysOnTop": false,
+        "skipTaskbar": false,
+        "theme": "dark"
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' https: data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ipc: http://ipc.localhost https://*",
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["**"]
+      }
+    },
+    "macOSPrivateApi": false
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["msi", "nsis", "app", "dmg", "deb", "rpm", "appimage"],
+    "publisher": "ipatool-gui contributors",
+    "category": "DeveloperTool",
+    "shortDescription": "Cross-platform GUI for ipatool",
+    "longDescription": "ipatool-gui wraps the ipatool CLI in a fast, native desktop UI. Login, search, download IPA files from the App Store, and manage your history — all without leaving the app.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": [],
+    "externalBin": ["binaries/ipatool"],
+    "copyright": "© 2026 ipatool-gui contributors",
+    "macOS": {
+      "frameworks": [],
+      "signingIdentity": null,
+      "entitlements": null
+    },
+    "windows": {
+      "wix": {
+        "skipWebviewInstall": false
+      },
+      "nsis": {
+        "installMode": "perUser"
+      },
+      "certificate": null
+    },
+    "linux": {
+      "deb": {
+        "depends": []
+      }
+    }
+  },
+  "plugins": {
+    "shell": {
+      "sidecar": true,
+      "scope": [
+        {
+          "name": "ipatool",
+          "cmd": "ipatool",
+          "args": true
+        }
+      ]
+    }
+  }
+}

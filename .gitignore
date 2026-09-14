@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+out/
+tsconfig.tsbuildinfo
+
+# Tauri / Rust
+src-tauri/target/
+src-tauri/binaries/
+src-tauri/gen/
+
+# CI scratch
+sidecars/
+release-assets/
+flattened/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Cargo lock (we keep this for apps; uncomment to ignore for libraries)
+# Cargo.lock

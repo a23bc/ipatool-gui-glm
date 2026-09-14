@@ -50,13 +50,13 @@ export function IpatoolMissingPage() {
           {installing ? "Installing…" : "Install automatically"}
         </Button>
         <a
-          href="https://github.com/ipatool/ipatool#installation"
+          href="https://github.com/majd/ipatool#installation"
           target="_blank"
           rel="noreferrer"
           className="inline-flex items-center justify-center gap-1 text-xs text-muted-foreground hover:text-foreground"
           onClick={(e) => {
             e.preventDefault();
-            ipc.openExternal("https://github.com/ipatool/ipatool#installation");
+            ipc.openExternal("https://github.com/majd/ipatool#installation");
           }}
         >
           <ExternalLink className="h-3 w-3" /> Manual install instructions

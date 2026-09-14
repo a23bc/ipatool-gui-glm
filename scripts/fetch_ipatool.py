@@ -27,7 +27,7 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
-REPO = "ipatool/ipatool"
+REPO = "majd/ipatool"
 API_LATEST = f"https://api.github.com/repos/{REPO}/releases/latest"
 
 ASSET_NAME_RE = re.compile(r"ipatool_[^_]+_(?P<plat>[a-z]+)_(?P<arch>[a-z0-9]+)", re.IGNORECASE)
@@ -43,29 +43,69 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
+def _gh_headers(extra: dict | None = None) -> dict:
+    """Build request headers for the GitHub API. If GITHUB_TOKEN is in the
+    environment (always present in GitHub Actions), use it for auth so we
+    get the 5000 req/hour limit instead of the anonymous 60/hour."""
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "ipatool-gui-ci",
+    }
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    if extra:
+        headers.update(extra)
+    return headers
+
+
 def http_get_json(url: str) -> dict:
-    req = urllib.request.Request(
-        url,
-        headers={
-            "Accept": "application/vnd.github+json",
-            "User-Agent": "ipatool-gui-ci",
-        },
-    )
+    req = urllib.request.Request(url, headers=_gh_headers())
     with urllib.request.urlopen(req, timeout=60) as resp:
         import json
         return json.loads(resp.read().decode())
 
 
 def pick_asset(release: dict, pattern: str) -> dict:
-    for asset in release.get("assets", []):
-        name = asset.get("name", "")
-        if pattern.lower() in name.lower():
-            return asset
-    raise RuntimeError(f"No asset matching '{pattern}' in release {release.get('tag_name')}")
+    """Find the release asset matching our target. We try the supplied
+    pattern first, then fall back to common variants for the same platform
+    so we survive minor naming changes between ipatool releases."""
+    assets = release.get("assets", [])
+    # Build a list of candidate substrings: the user-supplied pattern plus
+    # common spelling variants (underscores ↔ dashes, alternative names).
+    variants: list[str] = [pattern.lower()]
+    p = pattern.lower()
+    if "_" in p:
+        variants.append(p.replace("_", "-"))
+    if "-" in p:
+        variants.append(p.replace("-", "_"))
+    if p.startswith("darwin"):
+        variants.extend([p.replace("darwin", "macos"), p.replace("darwin", "mac")])
+    if p.startswith("windows"):
+        variants.extend([p.replace("windows", "win")])
+    # Deduplicate while preserving order.
+    seen: set[str] = set()
+    candidates = [v for v in variants if not (v in seen or seen.add(v))]
+    for cand in candidates:
+        for asset in assets:
+            name = asset.get("name", "")
+            if cand in name.lower():
+                return asset
+    # No match — print all available asset names so the CI log reader can
+    # see what naming convention this release uses and adjust the matrix.
+    available = "\n".join(f"  - {a.get('name')}" for a in assets)
+    raise RuntimeError(
+        f"No asset matching any of {candidates} in release {release.get('tag_name')}.\n"
+        f"Available assets:\n{available}\n"
+        f"Hint: update the 'asset_pattern' matrix value in .github/workflows/build.yml "
+        f"to match one of the names above."
+    )
 
 
 def download(url: str) -> bytes:
-    req = urllib.request.Request(url, headers={"User-Agent": "ipatool-gui-ci"})
+    # Release asset downloads from objects.githubusercontent.com also honour
+    # the same Authorization header.
+    req = urllib.request.Request(url, headers=_gh_headers())
     with urllib.request.urlopen(req, timeout=300) as resp:
         return resp.read()
 

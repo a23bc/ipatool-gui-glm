@@ -42,6 +42,8 @@ jobs:
 
       - name: Fetch & extract ipatool release asset
         id: fetch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python scripts/fetch_ipatool.py --target "${{ matrix.target }}" --pattern "${{ matrix.asset_pattern }}" --ext "${{ matrix.ext }}"
 
       - name: Upload artifact

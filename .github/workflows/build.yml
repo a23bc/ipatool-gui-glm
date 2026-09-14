@@ -40,14 +40,34 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Diagnostic — list release assets (raw)
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Raw GitHub API response for majd/ipatool latest release:"
+          curl -sS \
+            -H 'Accept: application/vnd.github+json' \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H 'User-Agent: ipatool-gui-ci' \
+            https://api.github.com/repos/majd/ipatool/releases/latest \
+            | python3 -c "import sys, json; d=json.load(sys.stdin); print('tag:', d.get('tag_name')); print('assets:'); [print(f'  - {a[\"name\"]}  ({a[\"size\"]} bytes)  -> {a[\"browser_download_url\"]}') for a in d.get('assets',[])]"
+
       - name: Fetch & extract ipatool release asset
         id: fetch
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python scripts/fetch_ipatool.py --target "${{ matrix.target }}" --pattern "${{ matrix.asset_pattern }}" --ext "${{ matrix.ext }}"
 
+      - name: Diagnostic — ls src-tauri/binaries (always)
+        if: always()
+        run: |
+          echo "Listing src-tauri/binaries/ after fetch:"
+          ls -la src-tauri/binaries/ 2>&1 || true
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
+        if: ${{ success() }}
         with:
           name: ipatool-${{ matrix.target }}
           path: src-tauri/binaries/

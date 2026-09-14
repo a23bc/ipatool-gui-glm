@@ -1,40 +1,21 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "main-capability",
-  "description": "Capabilities for the main window",
+  "description": "Capabilities for the main window of ipatool-gui. We use the broad `shell:default` permission (which covers spawn, execute, open, stdin-write, kill) because this app needs to spawn the bundled ipatool sidecar AND, in dev mode, ipatool from PATH. The sidecar scope itself is declared in tauri.conf.json under `plugins.shell.scope`.",
   "windows": ["main"],
   "permissions": [
     "core:default",
-    "core:event:default",
-    "core:window:default",
-    "core:webview:default",
-    "core:app:default",
-    "core:path:default",
-    "shell:allow-spawn-sidecar",
+    "shell:default",
+    "shell:allow-spawn",
     "shell:allow-execute",
-    {
-      "identifier": "shell:allow-execute",
-      "allow": [
-        {
-          "name": "ipatool",
-          "cmd": "ipatool",
-          "args": true
-        }
-      ]
-    },
     "shell:allow-open",
-    "dialog:allow-open",
-    "dialog:allow-save",
+    "shell:allow-stdin-write",
+    "shell:allow-kill",
+    "dialog:default",
     "fs:default",
-    "fs:allow-read-text-file",
-    "fs:allow-write-text-file",
-    "fs:allow-create-dir",
-    "fs:allow-exists",
-    "fs:allow-read-dir",
     "process:default",
     "os:default",
-    "clipboard-manager:allow-write-text",
-    "clipboard-manager:allow-read-text",
+    "clipboard-manager:default",
     "notification:default",
     "log:default"
   ]

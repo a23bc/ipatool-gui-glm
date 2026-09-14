@@ -27,11 +27,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # Asset naming in majd/ipatool v2.6.0+ follows:
+        #   ipatool-<version>-<os>-<arch>.tar.gz
+        # where <os> ∈ {macos, linux, windows, ios} and <arch> ∈ {amd64, arm64}.
+        # All archives are .tar.gz (Windows is NOT a zip despite conventional
+        # wisdom — ipatool uses tar.gz across the board).
         include:
-          - { target: aarch64-apple-darwin,    asset_pattern: "darwin_arm64",    ext: "tar.gz" }
-          - { target: x86_64-apple-darwin,      asset_pattern: "darwin_amd64",    ext: "tar.gz" }
-          - { target: x86_64-pc-windows-msvc,   asset_pattern: "windows_amd64",  ext: "zip"    }
-          - { target: x86_64-unknown-linux-gnu, asset_pattern: "linux_amd64",    ext: "tar.gz" }
+          - { target: aarch64-apple-darwin,    asset_pattern: "macos-arm64",   ext: "tar.gz" }
+          - { target: x86_64-apple-darwin,      asset_pattern: "macos-amd64",   ext: "tar.gz" }
+          - { target: x86_64-pc-windows-msvc,   asset_pattern: "windows-amd64", ext: "tar.gz" }
+          - { target: x86_64-unknown-linux-gnu, asset_pattern: "linux-amd64",   ext: "tar.gz" }
     steps:
       - uses: actions/checkout@v4
 

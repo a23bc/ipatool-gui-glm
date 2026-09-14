@@ -115,33 +115,50 @@ def download(url: str) -> bytes:
 def pick_asset(release: dict, pattern: str) -> dict:
     """Find the release asset matching our target. We try the supplied
     pattern first, then fall back to common variants for the same platform
-    so we survive minor naming changes between ipatool releases."""
+    so we survive minor naming changes between ipatool releases.
+
+    Asset naming in majd/ipatool v2.6.0+ uses dash separators:
+      ipatool-<version>-<os>-<arch>.tar.gz
+    where <os> ∈ {macos, linux, windows, ios}. We still support the older
+    `darwin_arm64` underscore form in case anyone copy-pastes it from docs.
+    """
     assets = release.get("assets", []) or []
     log(f"  release has {len(assets)} asset(s):")
     for a in assets:
         log(f"    - {a.get('name')}  ({a.get('size')} bytes, {a.get('browser_download_url')})")
 
-    variants: list[str] = [pattern.lower()]
     p = pattern.lower()
-    if "_" in p:
-        variants.append(p.replace("_", "-"))
-    if "-" in p:
-        variants.append(p.replace("-", "_"))
-    if p.startswith("darwin"):
-        variants.extend([p.replace("darwin", "macos"), p.replace("darwin", "mac")])
-    if p.startswith("windows"):
-        variants.extend([p.replace("windows", "win")])
+    variants: list[str] = [p]
+    # Cross-product: both separators
+    variants.append(p.replace("_", "-") if "_" in p else p.replace("-", "_"))
+    # OS-name aliases (darwin -> macos, windows -> win)
+    os_aliases: list[tuple[str, str]] = [
+        ("darwin", "macos"),
+        ("darwin", "mac"),
+        ("windows", "win"),
+    ]
+    extra: list[str] = []
+    for src, dst in os_aliases:
+        if p.startswith(src + "_") or p == src or src + "-" in p or src + "_" in p:
+            # underscore form
+            u = p.replace(src + "_", dst + "_") if src + "_" in p else p.replace(src, dst, 1)
+            extra.append(u)
+            # dash form
+            extra.append(u.replace("_", "-") if "_" in u else u.replace("-", "_"))
+    variants.extend(extra)
 
+    # Deduplicate while preserving order
     seen: set[str] = set()
-    candidates = [v for v in variants if not (v in seen or seen.add(v))]
+    candidates = [v for v in variants if v and (v not in seen or seen.add(v))]
     log(f"  trying patterns in order: {candidates}")
+
     for cand in candidates:
         for asset in assets:
             name = asset.get("name", "")
             if cand in name.lower():
                 log(f"  ✓ matched '{cand}' against asset '{name}'")
                 return asset
-    # No match — surface all available assets as an error annotation.
+
     available = "\n".join(f"  - {a.get('name')}" for a in assets)
     err(
         f"No asset matching any of {candidates} in release "
@@ -152,29 +169,56 @@ def pick_asset(release: dict, pattern: str) -> dict:
     )
 
 
+def detect_format(blob: bytes, hint: str) -> str:
+    """Detect archive format from magic bytes. The `hint` is the file
+    extension we were told to expect; if magic bytes contradict it, magic
+    bytes win (so a tar.gz asset mistakenly labelled as .zip is still
+    handled correctly).
+
+    Returns one of: 'zip', 'tar.gz', 'tar', 'unknown'.
+    """
+    if blob[:4] == b"PK\x03\x04" or blob[:4] == b"PK\x05\x06":
+        return "zip"
+    if blob[:2] == b"\x1f\x8b":
+        # gzip — almost certainly tar.gz
+        return "tar.gz"
+    # ustar magic at offset 257
+    if len(blob) > 265 and blob[257:262] == b"ustar":
+        return "tar"
+    # Fallback: trust the hint.
+    log(f"  warning: could not detect archive format from magic bytes; "
+        f"falling back to hint={hint!r}")
+    return hint
+
+
 def list_archive(blob: bytes, ext: str) -> None:
     """Print the contents of the archive so the CI log shows what we're
     about to extract from."""
+    fmt = detect_format(blob, ext)
+    log(f"  detected archive format: {fmt} (hint was {ext!r})")
     log("  archive contents:")
     try:
-        if ext == "zip":
+        if fmt == "zip":
             with zipfile.ZipFile(io.BytesIO(blob)) as zf:
                 for info in zf.infolist():
                     kind = "DIR " if info.is_dir() else "FILE"
                     log(f"    [{kind}] {info.filename}  ({info.file_size} bytes)")
-        elif ext == "tar.gz":
-            with tarfile.open(fileobj=io.BytesIO(blob), mode="r:gz") as tf:
+        elif fmt in ("tar.gz", "tar"):
+            mode = "r:gz" if fmt == "tar.gz" else "r:"
+            with tarfile.open(fileobj=io.BytesIO(blob), mode=mode) as tf:
                 for m in tf.getmembers():
                     kind = "DIR " if m.isdir() else ("LINK" if m.issym() or m.islnk() else "FILE")
                     log(f"    [{kind}] {m.name}  ({m.size} bytes)")
     except Exception as e:
         err(f"  failed to list archive: {e}")
+        raise
 
 
 def extract_ipatool(blob: bytes, ext: str) -> bytes:
     """Return the raw bytes of the `ipatool` (or ipatool.exe) binary inside
     the archive."""
     list_archive(blob, ext)
+    fmt = detect_format(blob, ext)
 
     def matches(base: str) -> bool:
         b = base.lower()
@@ -182,7 +226,7 @@ def extract_ipatool(blob: bytes, ext: str) -> bytes:
             b.startswith("ipatool") and b.endswith(".exe")
         )
 
-    if ext == "zip":
+    if fmt == "zip":
         with zipfile.ZipFile(io.BytesIO(blob)) as zf:
             # First pass: exact name match.
             for info in zf.infolist():
@@ -200,8 +244,9 @@ def extract_ipatool(blob: bytes, ext: str) -> bytes:
                 if "ipatool" in base.lower():
                     log(f"  ✓ extracting '{info.filename}' (substring match)")
                     return zf.read(info.filename)
-    elif ext == "tar.gz":
-        with tarfile.open(fileobj=io.BytesIO(blob), mode="r:gz") as tf:
+    elif fmt in ("tar.gz", "tar"):
+        mode = "r:gz" if fmt == "tar.gz" else "r:"
+        with tarfile.open(fileobj=io.BytesIO(blob), mode=mode) as tf:
             for member in tf.getmembers():
                 if not member.isfile():
                     continue

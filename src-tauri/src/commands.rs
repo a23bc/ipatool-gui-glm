@@ -10,11 +10,11 @@
 use crate::ipatool::{self, ipatool_version_string};
 use crate::settings::Settings;
 use crate::sidecar::{self, Release};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 use std::time::Duration;
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Emitter};
 use tauri_plugin_shell::process::{Command as ShellCommand, CommandEvent};
 use tauri_plugin_shell::ShellExt;
 
@@ -156,7 +156,7 @@ pub async fn auth_login(
         "--non-interactive",
     ];
     let cmd = spawn_with_country(&app, &args, &country)?;
-    let (mut rx) = cmd.spawn().map_err(|e| e.to_string())?;
+    let (mut rx, _child) = cmd.spawn().map_err(|e| e.to_string())?;
     let mut stdout = String::new();
     let mut stderr = String::new();
     let mut code = -1i32;
@@ -215,7 +215,7 @@ pub async fn auth_2fa(
         "--non-interactive",
     ];
     let cmd = spawn_with_country(&app, &args, &country)?;
-    let (mut rx) = cmd.spawn().map_err(|e| e.to_string())?;
+    let (mut rx, _child) = cmd.spawn().map_err(|e| e.to_string())?;
     let mut stdout = String::new();
     let mut stderr = String::new();
     let mut code_exit = -1i32;
@@ -342,7 +342,7 @@ pub async fn download_start(
     let token_for_task = token;
     let args_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
     let cmd = spawn_with_country(&app, &args_refs, &country)?;
-    let (mut rx) = cmd.spawn().map_err(|e| e.to_string())?;
+    let (mut rx, _child) = cmd.spawn().map_err(|e| e.to_string())?;
 
     tokio::spawn(async move {
         let mut buf = String::new();
@@ -402,7 +402,7 @@ pub async fn download_start(
                         serde_json::json!({
                             "token": token_for_task,
                             "code": code,
-                            "error": if code == 0 { null } else { buf.clone() },
+                            "error": if code == 0 { serde_json::Value::Null } else { serde_json::Value::String(buf.clone()) },
                         }),
                     );
                     return;
@@ -549,7 +549,7 @@ pub fn open_external(url: String) -> Result<(), String> {
 /// for one-shot commands (auth info, search, list-purchases, auth revoke).
 fn run_command_to_json(cmd: ShellCommand) -> Result<serde_json::Value, String> {
     let (tx, rx) = std::sync::mpsc::channel::<Result<String, String>>();
-    let (mut rx_events) = cmd.spawn().map_err(|e| e.to_string())?;
+    let (mut rx_events, _child) = cmd.spawn().map_err(|e| e.to_string())?;
     let tx2 = tx.clone();
     let mut stdout_buf = String::new();
     let mut stderr_buf = String::new();

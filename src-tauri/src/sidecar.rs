@@ -14,8 +14,8 @@ use std::io::Write;
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
 
-const IPATOOL_REPO: &str = "majd/ipatool";
-const IPATOOL_API: &str = "https://api.github.com/repos/majd/ipatool/releases/latest";
+pub const IPATOOL_REPO: &str = "majd/ipatool";
+pub const IPATOOL_API: &str = "https://api.github.com/repos/majd/ipatool/releases/latest";
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ReleaseAsset {

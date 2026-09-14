@@ -58,7 +58,7 @@ pub fn resolve_binary(app: &AppHandle) -> Result<PathBuf, String> {
 /// Spawn ipatool, choosing PATH → sidecar → runtime-download in that order.
 pub fn spawn(app: &AppHandle, args: &[&str]) -> Result<ShellCommand, String> {
     if let Ok(_) = which::which("ipatool") {
-        let mut cmd = ShellCommand::new("ipatool");
+        let mut cmd = app.shell().command("ipatool");
         for a in args {
             cmd = cmd.args([*a]);
         }
@@ -73,7 +73,7 @@ pub fn spawn(app: &AppHandle, args: &[&str]) -> Result<ShellCommand, String> {
     }
     let local = crate::sidecar::bin_path(app);
     if local.exists() {
-        let mut cmd = ShellCommand::new(local.to_string_lossy().to_string());
+        let mut cmd = app.shell().command(local.to_string_lossy().to_string());
         for a in args {
             cmd = cmd.args([*a]);
         }
@@ -99,7 +99,7 @@ pub fn run_json(app: &AppHandle, args: &[&str]) -> Result<serde_json::Value, Str
 
     let (tx, rx) = std::sync::mpsc::channel::<Result<String, String>>();
     let cmd = spawn(app, &full_args)?;
-    let (mut rx_events) = cmd.spawn().map_err(|e| e.to_string())?;
+    let (mut rx_events, _child) = cmd.spawn().map_err(|e| e.to_string())?;
     let tx2 = tx.clone();
     let mut stdout_buf = String::new();
     let mut stderr_buf = String::new();
@@ -177,7 +177,7 @@ fn ipatool_supports_json_flag(app: &AppHandle) -> Result<bool, String> {
 pub fn ipatool_version_string(app: &AppHandle) -> Result<String, String> {
     let (tx, rx) = std::sync::mpsc::channel::<Result<String, String>>();
     let cmd = spawn(app, &["--version"])?;
-    let (mut rx_events) = cmd.spawn().map_err(|e| e.to_string())?;
+    let (mut rx_events, _child) = cmd.spawn().map_err(|e| e.to_string())?;
     let tx2 = tx.clone();
     let mut buf = String::new();
     std::thread::spawn(move || {
@@ -206,7 +206,7 @@ pub fn ipatool_version_string(app: &AppHandle) -> Result<String, String> {
 pub fn run_plain(app: &AppHandle, args: &[&str]) -> Result<String, String> {
     let (tx, rx) = std::sync::mpsc::channel::<Result<String, String>>();
     let cmd = spawn(app, args)?;
-    let (mut rx_events) = cmd.spawn().map_err(|e| e.to_string())?;
+    let (mut rx_events, _child) = cmd.spawn().map_err(|e| e.to_string())?;
     let tx2 = tx.clone();
     let mut buf = String::new();
     std::thread::spawn(move || {

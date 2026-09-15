@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { Search, Download, History, Settings as SettingsIcon, Apple, ShieldCheck, CircleAlert } from "lucide-react";
 import { useAppStore } from "@/stores/app";
-import { useAppBootstrap } from "@/hooks/useAppBootstrap";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
@@ -15,7 +14,6 @@ const NAV = [
 ];
 
 export function AppShell() {
-  useAppBootstrap();
   const location = useLocation();
   const authed = useAppStore((s) => s.authed);
   const ipatool = useAppStore((s) => s.ipatool);

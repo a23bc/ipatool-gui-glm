@@ -7,13 +7,17 @@ import { HistoryPage } from "@/pages/HistoryPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { IpatoolMissingPage } from "@/pages/IpatoolMissingPage";
 import { useAppStore } from "@/stores/app";
+import { useAppBootstrap } from "@/hooks/useAppBootstrap";
+import { BootSplash } from "@/components/BootSplash";
 
-// The "missing ipatool" gate is implemented as a wrapper element that
-// redirects to /setup when ipatool is not available, otherwise renders the
-// inner route.
+// Gate runs the bootstrap ON ENTRY — regardless of whether ipatool is
+// known yet — so the store gets populated. Previously the bootstrap lived
+// inside AppShell, which only rendered once ipatool was non-null, causing
+// a deadlock where the bootstrap never ran and the screen stayed blank.
 function Gate() {
+  useAppBootstrap();
   const ipatool = useAppStore((s) => s.ipatool);
-  if (!ipatool) return null; // still booting
+  if (!ipatool) return <BootSplash />;
   if (ipatool.found_via === "missing") return <IpatoolMissingPage />;
   return <AppShell />;
 }

@@ -112,14 +112,12 @@ pub fn run() {
     ));
     log_line(&format!("args = {:?}", std::env::args().collect::<Vec<_>>()));
 
-    // Configure the log plugin to ALSO forward records to our log file.
-    // (By default tauri_plugin_log writes to stderr, which is invisible
-    // on Windows due to windows_subsystem = "windows".)
+    // Configure the log plugin with default targets (Stderr). On Windows
+    // with windows_subsystem = "windows", stderr is invisible, but our
+    // panic hook + breadcrumbs in log_line() already cover diagnostics.
+    // The plugin is mainly useful for log::info!() calls elsewhere.
     let log_plugin = tauri_plugin_log::Builder::new()
         .level(log::LevelFilter::Info)
-        .destination(|msg: &log::Record| {
-            log_line(&format!("[{}] {}: {}", msg.target(), msg.level(), msg.args()));
-        })
         .build();
 
     let builder = tauri::Builder::default()

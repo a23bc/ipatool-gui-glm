@@ -130,11 +130,23 @@ pub struct AuthLoginResult {
 
 /// Spawn ipatool with the `IPATOOL_COUNTRY_CODE` env var set so all
 /// subcommands honour the configured country (ipatool v2 reads country from
-/// this env var rather than from a CLI flag).
-fn spawn_with_country(app: &AppHandle, args: &[&str], country: &str) -> Result<ShellCommand, String> {
+/// this env var rather than from a CLI flag). Also injects the
+/// `--keychain-passphrase` global flag — ipatool v2.6.0+ requires it whenever
+/// `--non-interactive` is used (otherwise it fails with "keychain passphrase
+/// is required when not running in interactive mode").
+fn spawn_with_country(
+    app: &AppHandle,
+    args: &[&str],
+    country: &str,
+) -> Result<ShellCommand, String> {
+    let settings = Settings::load(app);
+    let passphrase = settings.keychain_passphrase.clone();
     let mut cmd = ipatool::spawn(app, args)?;
     if !country.is_empty() {
         cmd = cmd.env("IPATOOL_COUNTRY_CODE", country);
+    }
+    if !passphrase.is_empty() {
+        cmd = cmd.args(["--keychain-passphrase", &passphrase]);
     }
     Ok(cmd)
 }
@@ -532,7 +544,15 @@ pub fn get_settings(app: AppHandle) -> Settings {
 }
 
 #[tauri::command]
-pub fn set_settings(app: AppHandle, settings: Settings) -> Result<(), String> {
+pub fn set_settings(app: AppHandle, mut settings: Settings) -> Result<(), String> {
+    // Refuse to overwrite the auto-generated keychain passphrase with an
+    // empty string. If the frontend sends an empty passphrase (e.g., the
+    // IPC catch fallback fired on first load), keep the existing one so
+    // future ipatool invocations still work.
+    if settings.keychain_passphrase.is_empty() {
+        let existing = Settings::load(&app);
+        settings.keychain_passphrase = existing.keychain_passphrase;
+    }
     settings.save(&app)
 }
 

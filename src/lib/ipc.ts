@@ -17,6 +17,11 @@ export type Settings = {
   keep_history: boolean;
   notify_on_finish: boolean;
   theme: string;
+  /// Auto-generated, opaque to the frontend. The Rust backend injects
+  /// this into every ipatool invocation as `--keychain-passphrase`. The
+  /// frontend never reads or modifies this directly — it just passes it
+  /// through when persisting settings.
+  keychain_passphrase: string;
 };
 
 export type AuthLoginResult = {

@@ -58,17 +58,5 @@
         "depends": []
       }
     }
-  },
-  "plugins": {
-    "shell": {
-      "sidecar": true,
-      "scope": [
-        {
-          "name": "ipatool",
-          "cmd": "ipatool",
-          "args": true
-        }
-      ]
-    }
   }
 }

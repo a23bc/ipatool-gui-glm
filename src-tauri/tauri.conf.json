@@ -53,6 +53,11 @@
     "resources": [],
     "externalBin": ["binaries/ipatool"],
     "copyright": "© 2026 ipatool-gui contributors",
+    "windows": {
+      "webviewInstallMode": {
+        "type": "offlineBootstrapper"
+      }
+    },
     "linux": {
       "deb": {
         "depends": []
